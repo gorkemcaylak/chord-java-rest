@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="chord-java-REST:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <properties id="maven-jee-properties">
+      <options>
+        <module>chord-java-REST</module>
+        <packaging>war</packaging>
+      </options>
+    </properties>
+    <root id="archive" name="chord-java-REST-1.0.war">
+      <element id="artifact" artifact-name="chord-java-REST:war exploded" />
+    </root>
+  </artifact>
+</component>
