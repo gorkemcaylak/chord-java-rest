@@ -1,13 +1,23 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
 
 @SuperBuilder
 public class LocalChordNode extends ChordNode {
+    @JsonIgnore
+    @Getter @Setter(AccessLevel.PROTECTED)
+    private ChordNode predecessor;
+
+    @JsonIgnore
+    @Getter @Setter(AccessLevel.PROTECTED)
+    private ChordNode successor;
+
     @JsonIgnore
     @Getter
     // Use this value to limit chord size for testing.

@@ -19,4 +19,8 @@ public class RemoteChordNode extends ChordNode {
     protected boolean isAlive() {
         throw new UnsupportedOperationException();
     }
+
+    public ChordNode getPredecessor() {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -16,14 +16,6 @@ public abstract class ChordNode {
     @Getter
     private int id;
 
-    @JsonIgnore
-    @Getter @Setter(AccessLevel.PROTECTED)
-    private ChordNode predecessor;
-
-    @JsonIgnore
-    @Getter @Setter(AccessLevel.PROTECTED)
-    private ChordNode successor;
-
     public abstract ChordNode findSuccessor(ChordNode n);
 
     public abstract void notify(ChordNode n);
