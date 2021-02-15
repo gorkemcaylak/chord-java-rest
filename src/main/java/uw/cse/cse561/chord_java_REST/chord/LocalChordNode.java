@@ -2,6 +2,7 @@ package uw.cse.cse561.chord_java_REST.chord;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -9,12 +10,15 @@ import lombok.experimental.SuperBuilder;
 import java.net.URI;
 
 @SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 public class LocalChordNode extends ChordNode {
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
     @Getter @Setter(AccessLevel.PROTECTED)
     private ChordNode predecessor;
 
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
     @Getter @Setter(AccessLevel.PROTECTED)
     private ChordNode successor;
 
