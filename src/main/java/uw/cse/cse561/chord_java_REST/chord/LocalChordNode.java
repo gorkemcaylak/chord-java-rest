@@ -7,6 +7,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Random;
 
 @SuperBuilder
 public class LocalChordNode extends ChordNode {
@@ -26,8 +28,15 @@ public class LocalChordNode extends ChordNode {
     // or n in (n1 =< n2 ? n1 : 0, n2)
     private int chordSize;
 
+    // size = log(ChordSize-1)
+    // contains successor nodes to 2^i jumps
+    // interval is [2^i , 2^(i+1))
+    private ArrayList<ChordNode> fingerTable;
+
+    private int fingerTableSize;
+
     @Override
-    public ChordNode findSuccessor(ChordNode n) {
+    public ChordNode findSuccessor(int id) {
         throw new UnsupportedOperationException();
     }
 
@@ -53,8 +62,25 @@ public class LocalChordNode extends ChordNode {
         throw new UnsupportedOperationException();
     }
 
+    private int getStartOfFingerInterval(int i) {
+        int start= (getId() + (int)Math.pow(2, i-1)) % chordSize;
+        return start;
+    }
+
+    private void updateFingers(ChordNode s, int i) {
+        if(s.getId() >= getId() && s.getId() < getStartOfFingerInterval(i)) {
+            fingerTable.set(i, s);
+            // ChordNode p = getPredecessor();
+            // p.updateFingers(s, i); // need this on remote nodes?
+        }
+    }
+
     private void fixFingers() {
-        throw new UnsupportedOperationException();
+        Random rand = new Random();
+        int rand_int = rand.nextInt(fingerTableSize-1);
+        rand_int += 1;
+        int i = getStartOfFingerInterval(rand_int);
+        fingerTable.set(rand_int,findSuccessor(i));
     }
 
     private void checkPredecessor() {
@@ -71,6 +97,14 @@ public class LocalChordNode extends ChordNode {
                 .build();
         newNode.setSuccessor(newNode);
         // TODO: Implement timers for periodical action.
+
+        // initialize log(chordSize) entries in finger table
+        newNode.fingerTableSize = (int)Math.log(chordSize-1);
+        newNode.fingerTable = new ArrayList<ChordNode>(newNode.fingerTableSize);
+        newNode.fingerTable.set(0, newNode);
+        for(int i=1; i<newNode.fingerTableSize; i++){
+            newNode.fingerTable.set(i, null);
+        }
 
         return newNode;
     }

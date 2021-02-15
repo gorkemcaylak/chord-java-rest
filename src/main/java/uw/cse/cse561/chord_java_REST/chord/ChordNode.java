@@ -16,7 +16,7 @@ public abstract class ChordNode {
     @Getter
     private int id;
 
-    public abstract ChordNode findSuccessor(ChordNode n);
+    public abstract ChordNode findSuccessor(int id);
 
     public abstract void notify(ChordNode n);
 
