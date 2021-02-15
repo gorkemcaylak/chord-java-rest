@@ -16,9 +16,9 @@ public class LocalChordNode extends ChordNode {
     @Getter @Setter(AccessLevel.PROTECTED)
     private ChordNode predecessor;
 
-    @JsonIgnore
-    @Getter @Setter(AccessLevel.PROTECTED)
-    private ChordNode successor;
+    private int getSuccessor() {
+        throw new UnsupportedOperationException();
+    }
 
     @JsonIgnore
     @Getter
@@ -31,9 +31,8 @@ public class LocalChordNode extends ChordNode {
     // size = log(ChordSize-1)
     // contains successor nodes to 2^i jumps
     // interval is [2^i , 2^(i+1))
+    // 1 2 4 8
     private ArrayList<ChordNode> fingerTable;
-
-    private int fingerTableSize;
 
     @Override
     public ChordNode findSuccessor(int id) {
@@ -63,24 +62,23 @@ public class LocalChordNode extends ChordNode {
     }
 
     private int getStartOfFingerInterval(int i) {
-        int start= (getId() + (int)Math.pow(2, i-1)) % chordSize;
-        return start;
+        return (getId() + (int)Math.pow(2, i-1)) % chordSize;
     }
 
     private void updateFingers(ChordNode s, int i) {
+        // might not be necessary
         if(s.getId() >= getId() && s.getId() < getStartOfFingerInterval(i)) {
             fingerTable.set(i, s);
-            // ChordNode p = getPredecessor();
-            // p.updateFingers(s, i); // need this on remote nodes?
+            // we don't need to update the remote nodes
         }
     }
 
     private void fixFingers() {
-        Random rand = new Random();
-        int rand_int = rand.nextInt(fingerTableSize-1);
+        Random rand = new Random(); // uniform pick
+        int rand_int = rand.nextInt(fingerTable.size()-1);
         rand_int += 1;
         int i = getStartOfFingerInterval(rand_int);
-        fingerTable.set(rand_int,findSuccessor(i));
+        fingerTable.set(rand_int, findSuccessor(i));
     }
 
     private void checkPredecessor() {
@@ -93,16 +91,16 @@ public class LocalChordNode extends ChordNode {
                 .id(id)
                 .chordSize(chordSize)
                 .predecessor(null)
-                .successor(null)
+                // .successor(null)
                 .build();
-        newNode.setSuccessor(newNode);
         // TODO: Implement timers for periodical action.
 
-        // initialize log(chordSize) entries in finger table
-        newNode.fingerTableSize = (int)Math.log(chordSize-1);
-        newNode.fingerTable = new ArrayList<ChordNode>(newNode.fingerTableSize);
+        int temp = chordSize; // will always be a power of 2
+        int fingerTableSize = 0;
+        while((temp >>= 1) > 0) fingerTableSize++;
+        newNode.fingerTable = new ArrayList<>(fingerTableSize);
         newNode.fingerTable.set(0, newNode);
-        for(int i=1; i<newNode.fingerTableSize; i++){
+        for(int i=1; i<fingerTableSize; i++){
             newNode.fingerTable.set(i, null);
         }
 
