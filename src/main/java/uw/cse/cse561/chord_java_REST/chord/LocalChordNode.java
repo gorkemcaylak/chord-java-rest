@@ -8,8 +8,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -17,11 +16,12 @@ public class LocalChordNode extends ChordNode {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @Getter @Setter(AccessLevel.PROTECTED)
-    private ChordNode predecessor;
+    private LocalChordNode predecessor;
 
-    private int getSuccessor() {
-        throw new UnsupportedOperationException();
-    }
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @Getter @Setter(AccessLevel.PROTECTED)
+    private LocalChordNode successor;
 
     @JsonIgnore
     @Getter
@@ -29,43 +29,56 @@ public class LocalChordNode extends ChordNode {
     // n in (n1, n2) means
     // n in (n1, n1 =< n2 ? n2 : chordSize - 1)
     // or n in (n1 =< n2 ? n1 : 0, n2)
-    private int chordSize;
+    private final int keySpaceSize;
 
     // size = log(ChordSize-1)
     // contains successor nodes to 2^i jumps
     // interval is [2^i , 2^(i+1))
     // 1 2 4 8
-    private ArrayList<ChordNode> fingerTable;
 
-    @Override
-    public ChordNode findSuccessor(int id) {
-        throw new UnsupportedOperationException();
+    private static class Finger {
+        LocalChordNode node;
+        int start;
     }
+    private final List<Finger> fingerTable = new ArrayList<>();
 
-    @Override
-    public void notify(ChordNode n) {
-        throw new UnsupportedOperationException();
-    }
+    private final Map<String, String> storage = new HashMap<>();
 
     @Override
     protected boolean isAlive() {
         return true;
     }
 
-    private void join(ChordNode n) {
-        throw new UnsupportedOperationException();
+    private boolean inRange(int n, int start, int end) {
+        assert 0 <= n && n < keySpaceSize;
+        if (start == end) {
+            return n != start;
+        } else if (start < end) {
+            return start < n && n < end;
+        } else {
+            return start < n || n < end;
+        }
     }
 
-    private ChordNode closestPrecedingNode() {
-        throw new UnsupportedOperationException();
+    private LocalChordNode closestPrecedingFinger(int key) {
+        for (int i = fingerTable.size() - 1; i >= 0; i--) {
+            if (inRange(fingerTable.get(i).node.getId(), this.getId(), key)) {
+                return fingerTable.get(i).node;
+            }
+        }
+        return this;
     }
 
-    private void stabilize() {
-        throw new UnsupportedOperationException();
+    private LocalChordNode findPredecessor(int key) {
+        LocalChordNode currentNode = this;
+        while (!inRange(key, currentNode.getId(), currentNode.getSuccessor().getId())) {
+            currentNode = currentNode.closestPrecedingFinger(key);
+        }
+        return currentNode;
     }
 
-    private int getStartOfFingerInterval(int i) {
-        return (getId() + (int)Math.pow(2, i-1)) % chordSize;
+    private LocalChordNode findSuccessor(int key) {
+        return findPredecessor(key).getSuccessor();
     }
 
     private void updateFingers(ChordNode s, int i) {
@@ -84,15 +97,11 @@ public class LocalChordNode extends ChordNode {
         fingerTable.set(rand_int, findSuccessor(i));
     }
 
-    private void checkPredecessor() {
-        throw new UnsupportedOperationException();
-    }
-
     public static LocalChordNode create(URI uri, int id, int chordSize) {
         LocalChordNode newNode = LocalChordNode.builder()
                 .uri(uri)
                 .id(id)
-                .chordSize(chordSize)
+                .keySpaceSize(chordSize)
                 .predecessor(null)
                 // .successor(null)
                 .build();

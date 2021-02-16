@@ -16,8 +16,6 @@ public abstract class ChordNode {
     @Getter
     private final int id;
 
-    public abstract ChordNode findSuccessor(int id);
-
     public abstract void notify(ChordNode n);
 
     // Local chord node would return true. Remote node need pinging,
