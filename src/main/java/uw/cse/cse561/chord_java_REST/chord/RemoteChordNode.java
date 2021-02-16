@@ -8,7 +8,7 @@ import lombok.experimental.SuperBuilder;
 public class RemoteChordNode extends ChordNode {
 
     @Override
-    public ChordNode findSuccessor(ChordNode n) {
+    public ChordNode findSuccessor(int id) {
         throw new UnsupportedOperationException();
     }
 

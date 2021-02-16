@@ -31,7 +31,7 @@ public class LocalChordNode extends ChordNode {
     private int chordSize;
 
     @Override
-    public ChordNode findSuccessor(ChordNode n) {
+    public ChordNode findSuccessor(int id) {
         throw new UnsupportedOperationException();
     }
 

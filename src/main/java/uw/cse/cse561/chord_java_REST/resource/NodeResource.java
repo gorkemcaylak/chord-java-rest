@@ -18,12 +18,11 @@ public class NodeResource {
 
     private LocalChordNode chordNode;
 
-    @POST
-    @Path(FIND_SUCCESSOR)
-    @Consumes(MediaType.APPLICATION_JSON)
+    @GET
+    @Path(FIND_SUCCESSOR + "/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode findSuccessor(ChordNode target) {
-        return chordNode.findSuccessor(target);
+    public ChordNode findSuccessor(@PathParam("id") int id) {
+        return chordNode.findSuccessor(id);
     }
 
     @GET

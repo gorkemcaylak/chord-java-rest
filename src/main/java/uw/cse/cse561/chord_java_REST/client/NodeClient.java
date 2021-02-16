@@ -26,11 +26,11 @@ public class NodeClient {
         webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
     }
 
-    public ChordNode findSuccessor(ChordNode target) {
+    public ChordNode findSuccessor(int id) {
         try {
-            WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR);
+            WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR).path(String.valueOf(id));
             Response response = targetPath.request(MediaType.APPLICATION_JSON)
-                    .post(Entity.entity(target, MediaType.APPLICATION_JSON));
+                    .get();
             return response.readEntity(ChordNode.class);
         } catch (ProcessingException ex) {
         }
