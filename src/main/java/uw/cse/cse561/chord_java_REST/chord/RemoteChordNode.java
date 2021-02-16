@@ -1,12 +1,14 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 public class RemoteChordNode extends ChordNode {
 
     @Override
-    public ChordNode findSuccessor(ChordNode n) {
+    public ChordNode findSuccessor(int id) {
         throw new UnsupportedOperationException();
     }
 

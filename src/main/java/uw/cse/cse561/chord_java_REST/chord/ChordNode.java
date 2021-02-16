@@ -11,12 +11,12 @@ import java.net.URI;
 @ToString
 public abstract class ChordNode {
     @Getter
-    private URI uri;
+    private final URI uri;
 
     @Getter
-    private int id;
+    private final int id;
 
-    public abstract ChordNode findSuccessor(ChordNode n);
+    public abstract ChordNode findSuccessor(int id);
 
     public abstract void notify(ChordNode n);
 
