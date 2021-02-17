@@ -10,13 +10,17 @@ import java.net.URI;
 @EqualsAndHashCode
 @ToString
 public abstract class ChordNode {
-    @Getter
-    private final URI uri;
+    public ChordNode() {
+
+    }
+
+//    @Getter
+//    private final URI uri;
 
     @Getter
-    private final int id;
+    protected int id;
 
-    public abstract void notify(ChordNode n);
+//    public abstract void notify(ChordNode n);
 
     // Local chord node would return true. Remote node need pinging,
     // use this for checkPredecessor()

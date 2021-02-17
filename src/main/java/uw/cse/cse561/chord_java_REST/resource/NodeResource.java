@@ -18,33 +18,33 @@ public class NodeResource {
 
     private LocalChordNode chordNode;
 
-    @GET
-    @Path(FIND_SUCCESSOR + "/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode findSuccessor(@PathParam("id") int id) {
-        return chordNode.findSuccessor(id);
-    }
-
-    @GET
-    @Path(GET_PREDECESSOR)
-    @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode getPredecessor() {
-        return chordNode.getPredecessor();
-    }
-
-    @POST
-    @Path(NOTIFY)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response notify(ChordNode target) {
-        chordNode.notify(target);
-        return Response.ok().build();
-    }
-
-    @GET
-    @Path(PING)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response ping() {
-        return Response.ok().build();
-    }
+//    @GET
+//    @Path(FIND_SUCCESSOR + "/{id}")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public ChordNode findSuccessor(@PathParam("id") int id) {
+//        return chordNode.findSuccessor(id);
+//    }
+//
+//    @GET
+//    @Path(GET_PREDECESSOR)
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public ChordNode getPredecessor() {
+//        return chordNode.getPredecessor();
+//    }
+//
+//    @POST
+//    @Path(NOTIFY)
+//    @Consumes(MediaType.APPLICATION_JSON)
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response notify(ChordNode target) {
+//        chordNode.notify(target);
+//        return Response.ok().build();
+//    }
+//
+//    @GET
+//    @Path(PING)
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response ping() {
+//        return Response.ok().build();
+//    }
 }

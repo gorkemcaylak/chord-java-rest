@@ -6,13 +6,16 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import picocli.CommandLine;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
-import uw.cse.cse561.chord_java_REST.client.NodeClient;
+//import uw.cse.cse561.chord_java_REST.client.NodeClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Main implements Runnable {
     public static void main(String[] args) {
@@ -36,21 +39,42 @@ public class Main implements Runnable {
 
     @Override
     public void run() {
-        URI uri = UriBuilder.fromPath("/").scheme("http").host(listenAddress).port(port).build();
-        URI remoteAccessUri = UriBuilder.fromPath("/").scheme("http").host(hostname).port(port).build();
-        LocalChordNode localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
-        ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
-        System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
-        System.out.println(new NodeClient(UriBuilder.fromUri("http://localhost:8181/").build()).ping());
-        try {
-            server.start();
-            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("Press enter to exit...");
-            inputReader.readLine();
-            server.shutdownNow();
-        } catch (IOException e) {
-            e.printStackTrace();
+//        URI uri = UriBuilder.fromPath("/").scheme("http").host(listenAddress).port(port).build();
+//        URI remoteAccessUri = UriBuilder.fromPath("/").scheme("http").host(hostname).port(port).build();
+//        LocalChordNode localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
+//        ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
+//        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
+//        System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
+//        System.out.println(new NodeClient(UriBuilder.fromUri("http://localhost:8181/").build()).ping());
+//        try {
+//            server.start();
+//            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
+//            System.out.println("Press enter to exit...");
+//            inputReader.readLine();
+//            server.shutdownNow();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        List<LocalChordNode> nodes = new ArrayList<>();
+
+        int keySpaceSize = 1024;
+        for (int i = 0; i < 10; i++) {
+            nodes.add(new LocalChordNode());
+            int id = i * 100;
+            if (i == 0) {
+                nodes.get(i).join(id, keySpaceSize, null);
+            } else {
+                nodes.get(i).join(id, keySpaceSize, nodes.get(0));
+            }
+        }
+
+//        nodes.get(0).put("key" + 1068, "value" + 1068);
+//        System.out.println(nodes.get(0).get("key" + 1068));
+        for (int i = 0; i < 2000; i++) {
+            nodes.get(0).put("key" + i, "value" + i);
+        }
+        for (int i = 0; i < 2000; i += 100) {
+            System.out.println(nodes.get(0).get("key" + i));
         }
     }
 }
