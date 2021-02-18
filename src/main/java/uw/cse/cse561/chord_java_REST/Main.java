@@ -42,7 +42,6 @@ public class Main implements Runnable {
         ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
         System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
-        System.out.println(new NodeClient(UriBuilder.fromUri("http://localhost:8181/").build()).ping());
         try {
             server.start();
             BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
