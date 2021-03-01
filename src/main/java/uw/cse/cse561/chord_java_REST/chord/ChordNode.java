@@ -7,6 +7,7 @@ import lombok.experimental.SuperBuilder;
 import java.net.URI;
 
 @SuperBuilder
+@AllArgsConstructor
 @EqualsAndHashCode
 @ToString
 public abstract class ChordNode {
@@ -17,6 +18,9 @@ public abstract class ChordNode {
     private final int id;
 
     public abstract ChordNode findSuccessor(int id);
+
+
+    public abstract ChordNode getPredecessor();
 
     public abstract void notify(ChordNode n);
 

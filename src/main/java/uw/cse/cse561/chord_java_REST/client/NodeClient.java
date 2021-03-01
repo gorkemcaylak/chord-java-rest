@@ -64,8 +64,8 @@ public class NodeClient {
             Response response = targetPath.request(MediaType.APPLICATION_JSON).get();
             return response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL);
         } catch (ProcessingException ex) {
+            ex.printStackTrace();
         }
-
         return false;
     }
 }

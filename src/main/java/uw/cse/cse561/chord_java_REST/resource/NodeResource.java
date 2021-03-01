@@ -22,14 +22,22 @@ public class NodeResource {
     @Path(FIND_SUCCESSOR + "/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public ChordNode findSuccessor(@PathParam("id") int id) {
-        return chordNode.findSuccessor(id);
+        ChordNode ret = chordNode.findSuccessor(id);
+        if (ret == null) {
+            throw new NotFoundException();
+        }
+        return ret;
     }
 
     @GET
     @Path(GET_PREDECESSOR)
     @Produces(MediaType.APPLICATION_JSON)
     public ChordNode getPredecessor() {
-        return chordNode.getPredecessor();
+        ChordNode ret = chordNode.getPredecessor();
+        if (ret == null) {
+            throw new NotFoundException();
+        }
+        return ret;
     }
 
     @POST
