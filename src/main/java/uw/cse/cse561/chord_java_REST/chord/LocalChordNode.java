@@ -49,7 +49,7 @@ public class LocalChordNode extends ChordNode {
     @Override
     public ChordNode findSuccessor(int id) {
         ChordNode successor = getSuccessor();
-        if (within(id, getId(), successor.getId(), true)) {
+        if (within(id, getId(), successor.getId(), false)) {
             return successor;
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
