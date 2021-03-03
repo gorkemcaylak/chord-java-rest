@@ -34,7 +34,6 @@ public class RemoteChordNode extends ChordNode {
 
     @Override
     public ChordNode getPredecessor() {
-        System.out.println(getId());
         return client.getPredecessor();
     }
 
