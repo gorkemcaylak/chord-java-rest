@@ -16,8 +16,12 @@ import java.net.URI;
 public class ChordNodeModel {
     private URI uri;
     private int id;
+
     @Builder.Default
     private int pathCount = 0;
+
+    @Builder.Default
+    private String path = "";
 
     public ChordNode toChordNode() {
         return RemoteChordNode.builder().uri(uri).id(id).build();

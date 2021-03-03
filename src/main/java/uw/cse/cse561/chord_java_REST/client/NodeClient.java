@@ -9,7 +9,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
-import uw.cse.cse561.chord_java_REST.chord.RemoteChordNode;
 import uw.cse.cse561.chord_java_REST.resource.NodeResource;
 
 import java.net.URI;

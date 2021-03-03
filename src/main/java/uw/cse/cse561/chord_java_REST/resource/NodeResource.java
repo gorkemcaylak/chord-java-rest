@@ -8,6 +8,8 @@ import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
 import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 
+import java.text.MessageFormat;
+
 @Path(NodeResource.NODE_RESOURCE_PATH)
 @SuperBuilder
 public class NodeResource {
@@ -24,10 +26,11 @@ public class NodeResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ChordNodeModel findSuccessor(@PathParam("id") int id) {
         ChordNodeModel ret = chordNode.findSuccessor(id);
-        ret.setPathCount(ret.getPathCount() + 1);
         if (ret == null) {
             throw new NotFoundException();
         }
+        ret.setPathCount(ret.getPathCount() + 1);
+        ret.setPath(MessageFormat.format("<-- ({0}) {1}", chordNode.getId(), ret.getPath()));
         return ret;
     }
 
