@@ -56,7 +56,7 @@ public class LocalChordNode extends ChordNode {
     @Override
     public ChordNode findSuccessor(int id) {
         ChordNode successor = getSuccessor();
-        if (within(id, getId(), successor.getId(), true)) {
+        if (within(id, getId(), successor.getId(), false)) {
             return successor;
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
@@ -85,7 +85,8 @@ public class LocalChordNode extends ChordNode {
         predecessor = null;
         ChordNode temp = n_other.findSuccessor(getId());
         if (temp != null) {
-            fingerTable.set(0, temp);
+            for (int i = 0; i < fingerTable.size(); i++)
+                fingerTable.set(i, temp);
             return true;
         }
 
