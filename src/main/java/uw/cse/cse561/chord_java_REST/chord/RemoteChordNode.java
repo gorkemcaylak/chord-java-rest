@@ -3,6 +3,7 @@ package uw.cse.cse561.chord_java_REST.chord;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
 
 @SuperBuilder
@@ -18,7 +19,7 @@ public class RemoteChordNode extends ChordNode {
     }
 
     @Override
-    public ChordNode findSuccessor(int id) {
+    public ChordNodeModel findSuccessor(int id) {
         return client.findSuccessor(id);
     }
 

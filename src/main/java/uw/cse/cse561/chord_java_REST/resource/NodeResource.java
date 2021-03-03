@@ -22,8 +22,9 @@ public class NodeResource {
     @GET
     @Path(FIND_SUCCESSOR + "/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode findSuccessor(@PathParam("id") int id) {
-        ChordNode ret = chordNode.findSuccessor(id);
+    public ChordNodeModel findSuccessor(@PathParam("id") int id) {
+        ChordNodeModel ret = chordNode.findSuccessor(id);
+        ret.setPathCount(ret.getPathCount() + 1);
         if (ret == null) {
             throw new NotFoundException();
         }

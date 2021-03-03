@@ -27,16 +27,17 @@ public class NodeClient {
         webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
     }
 
-    public ChordNode findSuccessor(int id) {
+    public ChordNodeModel findSuccessor(int id) {
         Response response = null;
         try {
             WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR).path(String.valueOf(id));
             response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
             if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
-                return response.readEntity(ChordNodeModel.class).toChordNode();
+                return response.readEntity(ChordNodeModel.class);
             }
         } catch (ProcessingException ex) {
+            ex.printStackTrace();
         } finally {
             if (response !=null) {
                 response.close();
@@ -55,6 +56,7 @@ public class NodeClient {
                 return response.readEntity(ChordNodeModel.class).toChordNode();
             }
         } catch (ProcessingException ex) {
+            ex.printStackTrace();
         } finally {
             if (response !=null) {
                 response.close();
@@ -70,6 +72,7 @@ public class NodeClient {
                     .post(Entity.entity(target, MediaType.APPLICATION_JSON));
             response.close();
         } catch (ProcessingException ex) {
+            ex.printStackTrace();
         }
         return;
     }

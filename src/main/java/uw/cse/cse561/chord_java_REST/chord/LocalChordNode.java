@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 
 import java.net.URI;
 import java.util.*;
@@ -54,10 +55,10 @@ public class LocalChordNode extends ChordNode {
     private List<ChordNode> fingerTable;
 
     @Override
-    public ChordNode findSuccessor(int id) {
+    public ChordNodeModel findSuccessor(int id) {
         ChordNode successor = getSuccessor();
         if (within(id, getId(), successor.getId(), true)) {
-            return successor;
+            return successor.toChordNodeModel();
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
             if (closestPrecedingNode.getId() != getId()) {
@@ -83,9 +84,9 @@ public class LocalChordNode extends ChordNode {
 
     public boolean join(ChordNode n_other) {
         predecessor = null;
-        ChordNode temp = n_other.findSuccessor(getId());
+        ChordNodeModel temp = n_other.findSuccessor(getId());
         if (temp != null) {
-            fingerTable.set(0, temp);
+            fingerTable.set(0, classify(temp.toChordNode()));
             return true;
         }
 
@@ -129,10 +130,10 @@ public class LocalChordNode extends ChordNode {
         Random rand = new Random(); // uniform pick
         int rand_int = rand.nextInt(fingerTable.size() - 1);
         int i = getStartOfFingerInterval(rand_int);
-        ChordNode temp = findSuccessor(i);
+        ChordNodeModel temp = findSuccessor(i);
         assert (rand_int != 0);
         if (temp != null) {
-            fingerTable.set(rand_int, classify(temp));
+            fingerTable.set(rand_int, classify(temp.toChordNode()));
         }
         timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
     }
