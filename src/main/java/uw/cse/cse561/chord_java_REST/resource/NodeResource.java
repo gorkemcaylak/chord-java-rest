@@ -1,11 +1,17 @@
 package uw.cse.cse561.chord_java_REST.resource;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.ChordApplication;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
+import uw.cse.cse561.chord_java_REST.chord.ChordNodeInfo;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
+
+import java.util.List;
+import java.util.Map;
 
 @Path(NodeResource.NODE_RESOURCE_PATH)
 @SuperBuilder
@@ -16,36 +22,31 @@ public class NodeResource {
     public static final String NOTIFY = "/notify";
     public static final String PING = "/ping";
 
-    private LocalChordNode chordNode;
+    @NotNull
+    private final ChordApplication application;
 
     @GET
-    @Path(FIND_SUCCESSOR + "/{id}")
+    @Path(FIND_SUCCESSOR + "/{id}/{key}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode findSuccessor(@PathParam("id") int id) {
-        ChordNode ret = chordNode.findSuccessor(id);
-        if (ret == null) {
-            throw new NotFoundException();
-        }
+    public ChordNodeInfo findSuccessor(@PathParam("id") int id, @PathParam("key") int key) {
+        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).findSuccessor(key));
         return ret;
     }
 
     @GET
-    @Path(GET_PREDECESSOR)
+    @Path(GET_PREDECESSOR + "/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ChordNode getPredecessor() {
-        ChordNode ret = chordNode.getPredecessor();
-        if (ret == null) {
-            throw new NotFoundException();
-        }
+    public ChordNodeInfo getPredecessor(@PathParam("id") int id) {
+        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).getPredecessor());
         return ret;
     }
 
     @POST
-    @Path(NOTIFY)
+    @Path(NOTIFY + "/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response notify(ChordNode target) {
-        chordNode.notify(target);
+    public Response notify(@PathParam("id") int id, ChordNodeInfo target) {
+        application.getNode(id).notify(application.getNode(target));
         return Response.ok().build();
     }
 

@@ -5,22 +5,23 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import picocli.CommandLine;
+import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
-import uw.cse.cse561.chord_java_REST.client.NodeClient;
+import uw.cse.cse561.chord_java_REST.chord.RemoteChordNode;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main implements Runnable {
     public static void main(String[] args) {
         new CommandLine(new Main()).execute(args);
     }
-
-    @CommandLine.Option(names = {"-h", "--hostname"}, description = "Hostname", defaultValue = "localhost")
-    private String hostname;
 
     @CommandLine.Option(names = {"-a", "--address"}, description = "Listening address", defaultValue = "0.0.0.0")
     private String listenAddress;
@@ -28,20 +29,54 @@ public class Main implements Runnable {
     @CommandLine.Option(names = {"-p", "--port"}, description = "Port", defaultValue = "8080")
     private int port;
 
-    @CommandLine.Option(names = {"-i", "--id"}, description = "Chord node id", defaultValue = "0")
-    private int id;
+    @CommandLine.Option(names = {"-i", "--ids"}, description = "Chord node ids", defaultValue = "0", split = ",")
+    private List<Integer> ids;
 
-    @CommandLine.Option(names = {"-l", "--length"}, description = "Chord length", defaultValue = "128")
-    private int chordLength;
+    @CommandLine.Option(names = {"-u", "--url"}, description = "Chord node URLs", defaultValue = "", split = ",")
+    private List<String> urls;
+
+    @CommandLine.Option(names = {"-s", "--size"}, description = "Key space size", defaultValue = "128")
+    private int keySpaceSize;
 
     @Override
     public void run() {
-        URI uri = UriBuilder.fromPath("/").scheme("http").host(listenAddress).port(port).build();
-        URI remoteAccessUri = UriBuilder.fromPath("/").scheme("http").host(hostname).port(port).build();
-        LocalChordNode localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
-        ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
-        System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
+        URI listenURI = UriBuilder.fromPath("/").scheme("http").host(listenAddress).port(port).build();
+
+        Map<Integer, ChordNode> chordNodes = new HashMap<>();
+        ChordApplication application = ChordApplication.builder()
+                .chordNodes(chordNodes)
+                .build();
+
+        if (ids.size() != urls.size())
+            throw new IllegalArgumentException();
+
+        for (int i = 0; i < ids.size(); i++) {
+            int id = ids.get(i);
+            String url = urls.get(i);
+
+            if (url.equals("local")) {
+                LocalChordNode node = LocalChordNode.create(listenURI, id, keySpaceSize);
+
+                if (i == 0) {
+                    node.join(null);
+                } else {
+                    node.join(chordNodes.get(ids.get(0)));
+                }
+
+                chordNodes.put(id, node);
+            } else {
+                chordNodes.put(id,
+                        RemoteChordNode.builder()
+                                .uri(UriBuilder.fromUri(url).build())
+                                .id(id)
+                                .application(application)
+                                .build());
+            }
+        }
+
+        ResourceConfig rc = ResourceConfig.forApplication(application);
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(listenURI, rc);
+        System.out.println(MessageFormat.format("Starting server at {0}....", listenURI.toString()));
         try {
             server.start();
             BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));

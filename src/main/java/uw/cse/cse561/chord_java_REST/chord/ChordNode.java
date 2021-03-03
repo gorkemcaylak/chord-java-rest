@@ -1,7 +1,10 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
@@ -12,9 +15,11 @@ import java.net.URI;
 @ToString
 public abstract class ChordNode {
     @Getter
+    @NotNull
     private final URI uri;
 
     @Getter
+    @NotNull
     private final int id;
 
     public abstract ChordNode findSuccessor(int id);

@@ -1,17 +1,27 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.ChordApplication;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
+import uw.cse.cse561.chord_java_REST.resource.NodeResource;
+
 
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class RemoteChordNode extends ChordNode {
+    @JsonIgnore
     NodeClient client;
+
+    @JsonIgnore
+    @NotNull
+    ChordApplication application;
 
     protected RemoteChordNode(RemoteChordNodeBuilder<?, ?> b) {
         super(b);
-        this.client = new NodeClient(getUri());
+        this.client = new NodeClient(application, getUri(), getId());
     }
 
     @Override
