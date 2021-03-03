@@ -73,7 +73,6 @@ public class NodeClient {
         } catch (ProcessingException ex) {
             ex.printStackTrace();
         }
-        return;
     }
 
     public boolean ping() {
