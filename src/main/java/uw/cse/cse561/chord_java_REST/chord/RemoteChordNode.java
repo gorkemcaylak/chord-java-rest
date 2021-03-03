@@ -1,5 +1,6 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
@@ -7,6 +8,8 @@ import uw.cse.cse561.chord_java_REST.client.NodeClient;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class RemoteChordNode extends ChordNode {
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
     NodeClient client;
 
     protected RemoteChordNode(RemoteChordNodeBuilder<?, ?> b) {
@@ -31,6 +34,7 @@ public class RemoteChordNode extends ChordNode {
 
     @Override
     public ChordNode getPredecessor() {
+        System.out.println(getId());
         return client.getPredecessor();
     }
 

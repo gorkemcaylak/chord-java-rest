@@ -42,6 +42,7 @@
           <element id="library" level="project" name="Maven: info.picocli:picocli:4.6.1" />
           <element id="library" level="project" name="Maven: jakarta.ws.rs:jakarta.ws.rs-api:3.0.0" />
           <element id="library" level="project" name="Maven: jakarta.servlet:jakarta.servlet-api:5.0.0" />
+          <element id="library" level="project" name="Maven: jakarta.activation:jakarta.activation-api:2.0.0" />
         </element>
       </element>
       <element id="directory" name="META-INF">

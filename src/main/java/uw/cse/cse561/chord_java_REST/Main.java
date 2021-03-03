@@ -6,7 +6,7 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import picocli.CommandLine;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
-import uw.cse.cse561.chord_java_REST.client.NodeClient;
+import uw.cse.cse561.chord_java_REST.chord.RemoteChordNode;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,22 +34,76 @@ public class Main implements Runnable {
     @CommandLine.Option(names = {"-l", "--length"}, description = "Chord length", defaultValue = "128")
     private int chordLength;
 
+    @CommandLine.Option(names = {"--jh", "--join-node-hostname"},
+            description = "The already running node hostname. leave empty if not joining.",
+            defaultValue = CommandLine.Option.NULL_VALUE)
+    private String joinHostname;
+
+    @CommandLine.Option(names = {"--jp", "--join-node-port"},
+            description = "The already running node port. Use same value as current port if not joining.",
+            defaultValue = CommandLine.Option.NULL_VALUE)
+    private Integer joinPort;
+
+    @CommandLine.Option(names = {"--ji", "--join-node-id"},
+            description = "The already running node id",
+            defaultValue = CommandLine.Option.NULL_VALUE)
+    private Integer joinId;
+
+    @CommandLine.Option(names = {"--join-retry"},
+            description = "Time to retry to joining",
+            defaultValue = "3")
+    private int joinRetry;
+
     @Override
     public void run() {
-        URI uri = UriBuilder.fromPath("/").scheme("http").host(listenAddress).port(port).build();
-        URI remoteAccessUri = UriBuilder.fromPath("/").scheme("http").host(hostname).port(port).build();
+        URI uri = UriBuilder.fromPath("/")
+                .scheme("http")
+                .host(listenAddress)
+                .port(port)
+
+                .build();
+        URI remoteAccessUri = UriBuilder
+                .fromPath("/")
+                .scheme("http")
+                .host(hostname)
+                .port(port)
+                .build();
+
         LocalChordNode localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
         ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
         System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
         try {
             server.start();
+            if (joinHostname != null && joinPort != null && joinId != null) {
+                URI joiningUri = UriBuilder.fromPath("/")
+                        .scheme("http")
+                        .host(joinHostname)
+                        .port(joinPort)
+                        .build();
+
+                System.out.println(MessageFormat.format("Trying to join node {0} at {1}.", joinId.toString(), joiningUri));
+
+                RemoteChordNode joiningNode = RemoteChordNode.builder()
+                        .id(joinId)
+                        .uri(joiningUri)
+                        .build();
+
+                for (int i = 0; i < joinRetry; ++i) {
+                    if (localChordNode.join(joiningNode)) {
+                        break;
+                    } else {
+                        System.err.println(MessageFormat.format("Failed to join node {0} at {1}.", joinId, joiningUri));
+                    }
+                }
+            }
             BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Press enter to exit...");
             inputReader.readLine();
-            server.shutdownNow();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            server.shutdownNow();
         }
     }
 }

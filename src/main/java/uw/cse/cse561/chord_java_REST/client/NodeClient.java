@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
+import uw.cse.cse561.chord_java_REST.chord.RemoteChordNode;
 import uw.cse.cse561.chord_java_REST.resource.NodeResource;
 
 import java.net.URI;
@@ -27,23 +28,37 @@ public class NodeClient {
     }
 
     public ChordNode findSuccessor(int id) {
+        Response response = null;
         try {
             WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR).path(String.valueOf(id));
-            Response response = targetPath.request(MediaType.APPLICATION_JSON)
+            response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
-            return response.readEntity(ChordNode.class);
+            if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
+                return response.readEntity(ChordNodeModel.class).toChordNode();
+            }
         } catch (ProcessingException ex) {
+        } finally {
+            if (response !=null) {
+                response.close();
+            }
         }
         return null;
     }
 
     public ChordNode getPredecessor() {
+        Response response = null;
         try {
             WebTarget targetPath = webTarget.path(NodeResource.GET_PREDECESSOR);
-            Response response = targetPath.request(MediaType.APPLICATION_JSON)
+            response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
-            return response.readEntity(ChordNode.class);
+            if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
+                return response.readEntity(ChordNodeModel.class).toChordNode();
+            }
         } catch (ProcessingException ex) {
+        } finally {
+            if (response !=null) {
+                response.close();
+            }
         }
         return null;
     }
@@ -51,8 +66,9 @@ public class NodeClient {
     public void notify(ChordNode target) {
         try {
             WebTarget targetPath = webTarget.path(NodeResource.NOTIFY);
-            targetPath.request(MediaType.APPLICATION_JSON)
+            Response response = targetPath.request(MediaType.APPLICATION_JSON)
                     .post(Entity.entity(target, MediaType.APPLICATION_JSON));
+            response.close();
         } catch (ProcessingException ex) {
         }
         return;
@@ -62,6 +78,7 @@ public class NodeClient {
         try {
             WebTarget targetPath = webTarget.path(NodeResource.PING);
             Response response = targetPath.request(MediaType.APPLICATION_JSON).get();
+            response.close();
             return response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL);
         } catch (ProcessingException ex) {
             ex.printStackTrace();

@@ -19,7 +19,7 @@ public abstract class ChordNode {
 
     public abstract ChordNode findSuccessor(int id);
 
-
+    @JsonIgnore
     public abstract ChordNode getPredecessor();
 
     public abstract void notify(ChordNode n);

@@ -19,6 +19,13 @@ public class LocalChordNode extends ChordNode {
 
     public static final long FIX_FINGER_TIMER_MILLI = 200;
 
+    public static final long CHECK_PREDECESSOR_MILLI = 200;
+
+
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private Timer timer;
+
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @Getter
@@ -53,7 +60,11 @@ public class LocalChordNode extends ChordNode {
             return successor;
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
-            return closestPrecedingNode.findSuccessor(id);
+            if (closestPrecedingNode.getId() != getId()) {
+                return closestPrecedingNode.findSuccessor(id);
+            } else {
+                return successor.findSuccessor(id);
+            }
         }
     }
 
@@ -86,7 +97,7 @@ public class LocalChordNode extends ChordNode {
             ListIterator<ChordNode> iter = fingerTable.listIterator(fingerTable.size());
             while (iter.hasPrevious()) {
                 ChordNode prev = iter.previous();
-                if (within(prev.getId(), getId(), id, false)) {
+                if (prev != null && within(prev.getId(), getId(), id, false)) {
                     return prev;
                 }
             }
@@ -96,42 +107,42 @@ public class LocalChordNode extends ChordNode {
     }
 
     private void stabilize() {
-        ChordNode x = getSuccessor().getPredecessor();
+        ChordNode successor = getSuccessor();
+        ChordNode x = successor.getPredecessor();
         if (x != null) {
             x = classify(x);
-            if (within(x.getId(), getId(), getSuccessor().getId(), false)) {
+            if (within(x.getId(), getId(), successor.getId(), false)) {
                 fingerTable.set(0, x);
             }
-            x.notify(this);
+        } else if (!successor.isAlive()) {
+            fingerTable.set(0, this);
         }
+        getSuccessor().notify(this);
+        timer.schedule(wrap(()->stabilize()), STABILIZE_TIMER_MILLI);
     }
 
     private int getStartOfFingerInterval(int i) {
-        return (getId() + (int) Math.pow(2, i - 1)) % chordSize;
+        return (getId() + (int) Math.pow(2, i)) % chordSize;
     }
-
-//    private void updateFingers(ChordNode s, int i) {
-//        // might not be necessary
-//        if (s.getId() >= getId() && s.getId() < getStartOfFingerInterval(i)) {
-//            fingerTable.set(i, s);
-//            // we don't need to update the remote nodes
-//        }
-//    }
 
     private void fixFingers() {
         Random rand = new Random(); // uniform pick
         int rand_int = rand.nextInt(fingerTable.size() - 1);
         int i = getStartOfFingerInterval(rand_int);
         ChordNode temp = findSuccessor(i);
+        assert (rand_int != 0);
         if (temp != null) {
             fingerTable.set(rand_int, classify(temp));
         }
+        timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
     }
 
     private void checkPredecessor() {
         if (predecessor != null && !predecessor.isAlive()) {
             predecessor = null;
         }
+
+        timer.schedule(wrap(()->checkPredecessor()), CHECK_PREDECESSOR_MILLI);
     }
 
     public static LocalChordNode create(URI uri, int id, int chordSize) {
@@ -140,6 +151,7 @@ public class LocalChordNode extends ChordNode {
                 .id(id)
                 .chordSize(chordSize)
                 .predecessor(null)
+                .timer(new Timer("Node task timer", true))
                 .build();
         // TODO: Implement timers for periodical action.
 
@@ -149,12 +161,13 @@ public class LocalChordNode extends ChordNode {
 
         // initialize size array
         newNode.fingerTable = Collections.synchronizedList(
-                new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, newNode)));
+                new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, null)));
 
-        Timer timer = new Timer("Node task timer", true);
+        newNode.fingerTable.set(0, newNode);
 
-        timer.scheduleAtFixedRate(wrap(()->newNode.stabilize()), STARTUP_DELAY_MILLI, STABILIZE_TIMER_MILLI);
-        timer.scheduleAtFixedRate(wrap(()->newNode.fixFingers()), STARTUP_DELAY_MILLI, STABILIZE_TIMER_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.stabilize()), STARTUP_DELAY_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.fixFingers()), STARTUP_DELAY_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.checkPredecessor()), STARTUP_DELAY_MILLI);
         return newNode;
     }
 
@@ -165,15 +178,17 @@ public class LocalChordNode extends ChordNode {
             throw new IllegalArgumentException();
         }
 
-        if (closeEnd && searchId == endId) {
-            return true;
+        if (searchId == endId) {
+            return closeEnd;
         }
 
         if (startId < endId) {
             return searchId > startId && searchId < endId;
-        } else {
+        } else if (startId > endId) {
             return searchId > startId || searchId < endId;
         }
+
+        return true;
     }
 
     private ChordNode classify(ChordNode node) {
@@ -190,7 +205,6 @@ public class LocalChordNode extends ChordNode {
 
     private static TimerTask wrap(Runnable r) {
         return new TimerTask() {
-
             @Override
             public void run() {
                 r.run();

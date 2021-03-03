@@ -6,6 +6,7 @@ import jakarta.ws.rs.core.Response;
 import lombok.experimental.SuperBuilder;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
+import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 
 @Path(NodeResource.NODE_RESOURCE_PATH)
 @SuperBuilder
@@ -44,8 +45,8 @@ public class NodeResource {
     @Path(NOTIFY)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response notify(ChordNode target) {
-        chordNode.notify(target);
+    public Response notify(ChordNodeModel target) {
+        chordNode.notify(target.toChordNode());
         return Response.ok().build();
     }
 
