@@ -21,6 +21,10 @@ public class LocalChordNode extends ChordNode {
 
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    private final Timer timer = new Timer("Node task timer", true);
+
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
     @Getter
     @Setter(AccessLevel.PROTECTED)
     private ChordNode predecessor;
@@ -49,17 +53,40 @@ public class LocalChordNode extends ChordNode {
     @Override
     public ChordNode findSuccessor(int id) {
         ChordNode successor = getSuccessor();
-        if (within(id, getId(), successor.getId(), false)) {
+        if (id == getId()) {
+            return this;
+        }
+        if (within(id, getId(), false, successor.getId(), true)) {
             return successor;
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
-            return closestPrecedingNode.findSuccessor(id);
+            if (closestPrecedingNode.getId() != getId()) {
+                return closestPrecedingNode.findSuccessor(id);
+            } else {
+                return successor.findSuccessor(id);
+            }
         }
+    }
+
+    private ChordNode closestPrecedingNode(int id) {
+        synchronized (fingerTable) {
+            ListIterator<ChordNode> iter = fingerTable.listIterator(fingerTable.size());
+            while (iter.hasPrevious()) {
+                ChordNode finger = iter.previous();
+                if (finger != null && within(finger.getId(), getId(), false, id, false)) {
+                    return finger;
+                }
+            }
+        }
+
+        // TODO: we shouldn't reach this line?
+
+        return this;
     }
 
     @Override
     public void notify(ChordNode n_other) {
-        if (predecessor == null || within(n_other.getId(), predecessor.getId(), getId(), false)) {
+        if (predecessor == null || within(n_other.getId(), predecessor.getId(), false, getId(), false)) {
             // do not need classify since notify is called by stabilize
             predecessor = n_other;
         }
@@ -71,40 +98,32 @@ public class LocalChordNode extends ChordNode {
     }
 
     public void join(ChordNode n_other) {
+        predecessor = null;
+
         if (n_other == null) {
-            predecessor = this;
-            for (int i = 0; i < fingerTable.size(); i++)
-                fingerTable.set(i, this);
-        } else {
-            predecessor = null;
-            ChordNode successor = n_other.findSuccessor(getId());
-            assert successor != null;
-
-            for (int i = 0; i < fingerTable.size(); i++)
-                fingerTable.set(i, successor);
-        }
-    }
-
-    private ChordNode closestPrecedingNode(int id) {
-        synchronized (fingerTable) {
-            ListIterator<ChordNode> iter = fingerTable.listIterator(fingerTable.size());
-            while (iter.hasPrevious()) {
-                ChordNode prev = iter.previous();
-                if (within(prev.getId(), getId(), id, false)) {
-                    return prev;
-                }
-            }
+            fingerTable.set(0, this);
+            return;
         }
 
-        return this;
+        ChordNode successor = n_other.findSuccessor(getId());
+        assert successor != null;
+
+        fingerTable.set(0, successor);
     }
 
     private void stabilize() {
-        ChordNode x = getSuccessor().getPredecessor();
-        if (within(x.getId(), getId(), getSuccessor().getId(), false)) {
-            fingerTable.set(0, x);
+        ChordNode successor = getSuccessor();
+        ChordNode x = successor.getPredecessor();
+        if (x != null) {
+            if (within(x.getId(), getId(), false, getSuccessor().getId(), false)) {
+                fingerTable.set(0, x);
+            }
+        } else if (!successor.isAlive()) {
+            // TODO: why?
+            fingerTable.set(0, this);
         }
-        x.notify(this);
+        getSuccessor().notify(this);
+        timer.schedule(wrap(()->stabilize()), STABILIZE_TIMER_MILLI);
     }
 
     private int getStartOfFingerInterval(int i) {
@@ -122,12 +141,14 @@ public class LocalChordNode extends ChordNode {
 
     private void fixFingers() {
         Random rand = new Random(); // uniform pick
-        int rand_int = rand.nextInt(fingerTable.size());
+        // TODO: Add 1?
+        int rand_int = rand.nextInt(fingerTable.size() - 1) + 1;
         int i = getStartOfFingerInterval(rand_int);
         ChordNode temp = findSuccessor(i);
         if (temp != null) {
             fingerTable.set(rand_int, temp);
         }
+        timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
     }
 
     private void checkPredecessor() {
@@ -149,46 +170,31 @@ public class LocalChordNode extends ChordNode {
 
         // initialize size array
         newNode.fingerTable = Collections.synchronizedList(
-                new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, newNode)));
+                new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, null)));
+        newNode.fingerTable.set(0, newNode);
 
-        Timer timer = new Timer("Node task timer", true);
-
-        timer.scheduleAtFixedRate(wrap(()->newNode.stabilize()), STARTUP_DELAY_MILLI, STABILIZE_TIMER_MILLI);
-        timer.scheduleAtFixedRate(wrap(()->newNode.fixFingers()), STARTUP_DELAY_MILLI, STABILIZE_TIMER_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.stabilize()), STARTUP_DELAY_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.fixFingers()), STARTUP_DELAY_MILLI);
+        newNode.timer.schedule(wrap(()->newNode.checkPredecessor()), STARTUP_DELAY_MILLI);
         return newNode;
     }
 
-    private boolean within(int searchId, int startId, int endId, boolean closeEnd) {
+    private boolean within(int searchId, int startId, boolean closedStart, int endId, boolean closedEnd) {
         if (searchId < 0 || searchId >= keySpaceSize ||
                 startId < 0 || startId >= keySpaceSize ||
                 endId < 0 || endId >= keySpaceSize) {
             throw new IllegalArgumentException();
         }
 
-        assert startId != endId;
-
-        if (closeEnd && searchId == endId) {
-            return true;
-        }
+        boolean matchStart = closedStart? (searchId >= startId) : (searchId > startId);
+        boolean matchEnd = closedEnd? (searchId <= endId) : (searchId < endId);
 
         if (startId < endId) {
-            return searchId >= startId && searchId < endId;
+            return matchStart && matchEnd;
         } else {
-            return searchId >= startId || searchId < endId;
+            return matchStart || matchEnd;
         }
     }
-//
-//    private ChordNode classify(ChordNode node) {
-//        if (node.getId() == getId()) {
-//            return this;
-//        } else {
-//            if (node instanceof RemoteChordNode) {
-//                return node;
-//            } else  {
-//                return RemoteChordNode.builder().chordNode(node).build();
-//            }
-//        }
-//    }
 
     private static TimerTask wrap(Runnable r) {
         return new TimerTask() {
