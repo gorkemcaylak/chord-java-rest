@@ -4,8 +4,8 @@ import random
 import time
 import pickle
 
-CHORD_SIZE = 65536
-TOTAL_NODES = 1000
+CHORD_SIZE = 128
+TOTAL_NODES = 30
 QUERY_COUNT = 4
 
 jar_target = 'target/chord-java-REST-1.0-jar-with-dependencies.jar'
@@ -43,7 +43,7 @@ for i,node in enumerate(nodes_list):
     proc = subprocess.Popen(['java', '-jar', jar_target, '-p', str(node+8080), '-i', str(node),        \
                     '--jh', 'localhost', '--jp', str(entry_node+8080), '--ji', str(entry_node)])
     child_processes.append(proc)
-
+    time.sleep(0.5)
   present_nodes.append(node)
 
 with open("live_nodes.txt", "wb") as fp:
