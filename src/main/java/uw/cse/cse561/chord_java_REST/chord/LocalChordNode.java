@@ -93,6 +93,11 @@ public class LocalChordNode extends ChordNode {
     }
 
     @Override
+    public List<ChordNode> getFingerTable() {
+        return Collections.unmodifiableList(fingerTable);
+    }
+
+    @Override
     protected boolean isAlive() {
         return true;
     }

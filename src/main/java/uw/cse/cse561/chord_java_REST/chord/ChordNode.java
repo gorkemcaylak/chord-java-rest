@@ -8,6 +8,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @SuperBuilder
 @AllArgsConstructor
@@ -28,6 +29,8 @@ public abstract class ChordNode {
     public abstract ChordNode getPredecessor();
 
     public abstract void notify(ChordNode n);
+
+    public abstract List<ChordNode> getFingerTable();
 
     // Local chord node would return true. Remote node need pinging,
     // use this for checkPredecessor()

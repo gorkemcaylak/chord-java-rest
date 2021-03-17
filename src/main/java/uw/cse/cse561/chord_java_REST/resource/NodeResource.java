@@ -6,7 +6,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.experimental.SuperBuilder;
 import uw.cse.cse561.chord_java_REST.ChordApplication;
+import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.chord.ChordNodeInfo;
+
+import java.util.List;
 
 @Path(NodeResource.NODE_RESOURCE_PATH)
 @SuperBuilder
@@ -15,6 +18,7 @@ public class NodeResource {
     public static final String FIND_SUCCESSOR = "/find-successor";
     public static final String GET_PREDECESSOR = "/get-predecessor";
     public static final String NOTIFY = "/notify";
+    public static final String GET_FINGER_TABLE = "/get-finger-table";
     public static final String PING = "/ping";
 
     @NotNull
@@ -43,6 +47,13 @@ public class NodeResource {
     public Response notify(@QueryParam("id") int id, ChordNodeInfo target) {
         application.getNode(id).notify(application.getNode(target));
         return Response.ok().build();
+    }
+
+    @GET
+    @Path(GET_FINGER_TABLE)
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ChordNode> getFingerTable(@QueryParam("id") int id) {
+        return application.getNode(id).getFingerTable();
     }
 
     @GET

@@ -8,6 +8,8 @@ import uw.cse.cse561.chord_java_REST.ChordApplication;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
 import uw.cse.cse561.chord_java_REST.resource.NodeResource;
 
+import java.util.List;
+
 
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -32,6 +34,11 @@ public class RemoteChordNode extends ChordNode {
     @Override
     public void notify(ChordNode n) {
         client.notify(n);
+    }
+
+    @Override
+    public List<ChordNode> getFingerTable() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
