@@ -26,6 +26,7 @@ public class NodeMultiResource {
     public static final String CREATE = "/create";
     public static final String JOIN = "/join";
     public static final String LEAVE = "/leave";
+    public static final String FINGER_TABLE = "/finger";
 
     private final String hostname;
     private final int port;
@@ -46,8 +47,22 @@ public class NodeMultiResource {
         if (current == null || ret == null) {
             throw new NotFoundException();
         }
-        ret.setPathCount(ret.getPathCount() + 1);
-        ret.setPath(MessageFormat.format("<-- ({0}) {1}", current.getId(), ret.getPath()));
+        return ret;
+    }
+
+    @POST
+    @Path("/{my_id}" + FIND_SUCCESSOR + "/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public ChordNodeModel findSuccessor(@PathParam("my_id") int my_id, @PathParam("id") int id, VisitedModel visitedModel) {
+        LocalChordNode current = chordNodes.get(my_id);
+        ChordNodeModel ret = null;
+        if (current != null) {
+            ret = current.findSuccessor(id, visitedModel.getVisited());
+        }
+        if (current == null || ret == null) {
+            throw new NotFoundException();
+        }
         return ret;
     }
 
@@ -116,21 +131,15 @@ public class NodeMultiResource {
             throw new NotFoundException();
         }
 
-        URI joiningUri = UriBuilder.fromPath("/")
-                .scheme("http")
-                .host(hostname)
-                .port(port)
-                .build();
-
-        RemoteChordNode joiningNode = RemoteChordNode.builder()
-                .id(id)
-                .uri(joiningUri)
-                .build();
+        LocalChordNode joiningNode = chordNodes.get(id);
+        if (joiningNode == null) {
+            throw new BadRequestException();
+        }
 
         if (current.join(joiningNode)) {
             return Response.ok().build();
         } else {
-            throw new BadRequestException();
+            throw new InternalServerErrorException("Something is horribly wrong");
         }
     }
 
@@ -144,6 +153,22 @@ public class NodeMultiResource {
         }
         current.shutdownNode();
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/{my_id}" + FINGER_TABLE)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<Integer, ChordNode> finger(@PathParam("my_id") int my_id) {
+        LocalChordNode current = chordNodes.get(my_id);
+        if (current == null) {
+            throw new NotFoundException();
+        }
+        Map<Integer, ChordNode> ret = new HashMap<>();
+        for (int i = 0; i < current.getFingerTable().size(); ++i) {
+            ret.put((my_id + (int) Math.pow(2, i)) % chordLength, current.getFingerTable().get(i));
+        }
+
+        return ret;
     }
 
     public static class NodeMultiResourceBuilder {

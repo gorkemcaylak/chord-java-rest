@@ -8,6 +8,8 @@ import uw.cse.cse561.chord_java_REST.Main;
 import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
 
+import java.util.List;
+
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class RemoteChordNode extends ChordNode {
@@ -17,11 +19,17 @@ public class RemoteChordNode extends ChordNode {
 
     protected RemoteChordNode(RemoteChordNodeBuilder<?, ?> b) {
         super(b);
+        this.client = new NodeClient(getUri());
         if (Main.MULTI) {
-            this.client = new NodeClient(UriBuilder.fromUri(getUri()).path(Integer.toString(getId())).build());
-        } else {
-            this.client = new NodeClient(getUri());
+            Exception ex = new IllegalStateException();
+            ex.printStackTrace();
+            throw new IllegalStateException();
         }
+    }
+
+    @Override
+    public ChordNodeModel findSuccessor(int id, List<Integer> visited) {
+        return client.findSuccessor(id, visited);
     }
 
     @Override

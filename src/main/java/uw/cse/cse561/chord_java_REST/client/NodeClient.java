@@ -11,24 +11,23 @@ import jakarta.ws.rs.core.UriBuilder;
 import uw.cse.cse561.chord_java_REST.Main;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.resource.NodeResource;
+import uw.cse.cse561.chord_java_REST.resource.VisitedModel;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class NodeClient {
-    public static final long CONNECT_TIMEOUT_SEC = 300;
-    public static final long READ_TIMEOUT_SEC = 300;
+    public static final long CONNECT_TIMEOUT_SEC = 30;
+    public static final long READ_TIMEOUT_SEC = 30;
 
     private final WebTarget webTarget;
 
     public NodeClient(URI baseUri) {
         Client client = ClientBuilder.newBuilder().connectTimeout(CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)
                 .readTimeout(READ_TIMEOUT_SEC, TimeUnit.SECONDS).build();
-        if (Main.MULTI) {
-            webTarget = client.target(UriBuilder.fromUri(baseUri).build());
-        } else {
-            webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
-        }
+
+        webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
     }
 
     public ChordNodeModel findSuccessor(int id) {
@@ -37,6 +36,25 @@ public class NodeClient {
             WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR).path(String.valueOf(id));
             response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
+            if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
+                return response.readEntity(ChordNodeModel.class);
+            }
+        } catch (ProcessingException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (response !=null) {
+                response.close();
+            }
+        }
+        return null;
+    }
+
+    public ChordNodeModel findSuccessor(int id, List<Integer> visited) {
+        Response response = null;
+        try {
+            WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR).path(String.valueOf(id));
+            response = targetPath.request(MediaType.APPLICATION_JSON)
+                    .post(Entity.entity(VisitedModel.builder().visited(visited).build(), MediaType.APPLICATION_JSON));
             if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
                 return response.readEntity(ChordNodeModel.class);
             }
