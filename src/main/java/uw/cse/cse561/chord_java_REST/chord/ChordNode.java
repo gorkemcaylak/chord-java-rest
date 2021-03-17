@@ -32,6 +32,10 @@ public abstract class ChordNode {
 
     public abstract List<ChordNode> getFingerTable();
 
+    public abstract void stabilize();
+
+    public abstract void fixFingers();
+
     // Local chord node would return true. Remote node need pinging,
     // use this for checkPredecessor()
     protected abstract boolean isAlive();

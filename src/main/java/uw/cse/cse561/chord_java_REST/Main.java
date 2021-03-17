@@ -5,6 +5,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import picocli.CommandLine;
+import uw.cse.cse561.chord_java_REST.Test.TestStabilize;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.chord.LocalChordNode;
 import uw.cse.cse561.chord_java_REST.chord.RemoteChordNode;
@@ -20,7 +21,8 @@ import java.util.Map;
 
 public class Main implements Runnable {
     public static void main(String[] args) {
-        new CommandLine(new Main()).execute(args);
+        TestStabilize.main();
+//        new CommandLine(new Main()).execute(args);
     }
 
     @CommandLine.Option(names = {"-a", "--address"}, description = "Listening address", defaultValue = "0.0.0.0")
@@ -55,7 +57,7 @@ public class Main implements Runnable {
             String url = urls.get(i);
 
             if (url.equals("local")) {
-                LocalChordNode node = LocalChordNode.create(listenURI, id, keySpaceSize);
+                LocalChordNode node = LocalChordNode.create(listenURI, id, keySpaceSize, true);
 
                 if (i == 0) {
                     node.join(null);

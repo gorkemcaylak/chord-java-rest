@@ -29,6 +29,10 @@ public class LocalChordNode extends ChordNode {
     @Setter(AccessLevel.PROTECTED)
     private ChordNode predecessor;
 
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private final boolean automaticStabilize;
+
     private ChordNode getSuccessor() {
         return fingerTable.get(0);
     }
@@ -116,7 +120,7 @@ public class LocalChordNode extends ChordNode {
         fingerTable.set(0, successor);
     }
 
-    private void stabilize() {
+    public void stabilize() {
         ChordNode successor = getSuccessor();
         ChordNode x = successor.getPredecessor();
         if (x != null) {
@@ -124,11 +128,14 @@ public class LocalChordNode extends ChordNode {
                 fingerTable.set(0, x);
             }
         } else if (!successor.isAlive()) {
+            throw new RuntimeException();
             // TODO: why?
-            fingerTable.set(0, this);
+//            fingerTable.set(0, this);
         }
         getSuccessor().notify(this);
-        timer.schedule(wrap(()->stabilize()), STABILIZE_TIMER_MILLI);
+        if (automaticStabilize) {
+            timer.schedule(wrap(()->stabilize()), STABILIZE_TIMER_MILLI);
+        }
     }
 
     private int getStartOfFingerInterval(int i) {
@@ -144,8 +151,8 @@ public class LocalChordNode extends ChordNode {
 //        }
 //    }
 
-    private void fixFingers() {
-        Random rand = new Random(); // uniform pick
+    private final Random rand = new Random(); // uniform pick
+    public void fixFingers() {
         // TODO: Add 1?
         int rand_int = rand.nextInt(fingerTable.size() - 1) + 1;
         int i = getStartOfFingerInterval(rand_int);
@@ -153,7 +160,10 @@ public class LocalChordNode extends ChordNode {
         if (temp != null) {
             fingerTable.set(rand_int, temp);
         }
-        timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
+
+        if (automaticStabilize) {
+            timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
+        }
     }
 
     private void checkPredecessor() {
@@ -162,12 +172,13 @@ public class LocalChordNode extends ChordNode {
         }
     }
 
-    public static LocalChordNode create(URI uri, int id, int keySpaceSize) {
+    public static LocalChordNode create(URI uri, int id, int keySpaceSize, boolean automaticStabilize) {
         LocalChordNode newNode = LocalChordNode.builder()
                 .uri(uri)
                 .id(id)
                 .keySpaceSize(keySpaceSize)
                 .predecessor(null)
+                .automaticStabilize(automaticStabilize)
                 .build();
 
         int fingerTableSize = 1;
@@ -178,9 +189,11 @@ public class LocalChordNode extends ChordNode {
                 new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, null)));
         newNode.fingerTable.set(0, newNode);
 
-        newNode.timer.schedule(wrap(()->newNode.stabilize()), STARTUP_DELAY_MILLI);
-        newNode.timer.schedule(wrap(()->newNode.fixFingers()), STARTUP_DELAY_MILLI);
-        newNode.timer.schedule(wrap(()->newNode.checkPredecessor()), STARTUP_DELAY_MILLI);
+        if (automaticStabilize) {
+            newNode.timer.schedule(wrap(() -> newNode.stabilize()), STARTUP_DELAY_MILLI);
+            newNode.timer.schedule(wrap(() -> newNode.fixFingers()), STARTUP_DELAY_MILLI);
+            newNode.timer.schedule(wrap(() -> newNode.checkPredecessor()), STARTUP_DELAY_MILLI);
+        }
         return newNode;
     }
 

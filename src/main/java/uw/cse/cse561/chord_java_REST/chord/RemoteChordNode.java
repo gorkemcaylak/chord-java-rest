@@ -42,6 +42,16 @@ public class RemoteChordNode extends ChordNode {
     }
 
     @Override
+    public void stabilize() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void fixFingers() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected boolean isAlive() {
         return client.ping();
     }
