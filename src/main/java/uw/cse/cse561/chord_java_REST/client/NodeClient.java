@@ -38,8 +38,8 @@ public class NodeClient {
     public ChordNode findSuccessor(int key) {
         try {
             WebTarget targetPath = webTarget.path(NodeResource.FIND_SUCCESSOR)
-                    .path(String.valueOf(id))
-                    .path(String.valueOf(key));
+                    .queryParam("id", String.valueOf(id))
+                    .queryParam("key", String.valueOf(key));
             Response response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
             return application.getNode(response.readEntity(ChordNodeInfo.class));
@@ -51,7 +51,7 @@ public class NodeClient {
     public ChordNode getPredecessor() {
         try {
             WebTarget targetPath = webTarget.path(NodeResource.GET_PREDECESSOR)
-                    .path(String.valueOf(id));
+                    .queryParam("id", String.valueOf(id));
             Response response = targetPath.request(MediaType.APPLICATION_JSON)
                     .get();
             return application.getNode(response.readEntity(ChordNodeInfo.class));
@@ -63,7 +63,7 @@ public class NodeClient {
     public void notify(ChordNode target) {
         try {
             WebTarget targetPath = webTarget.path(NodeResource.NOTIFY)
-                    .path(String.valueOf(id));
+                    .queryParam("id", String.valueOf(id));
             targetPath.request(MediaType.APPLICATION_JSON)
                     .post(Entity.entity(new ChordNodeInfo(target), MediaType.APPLICATION_JSON));
         } catch (ProcessingException ex) {
