@@ -57,12 +57,24 @@ public class TestStabilize {
         return true;
     }
 
-    public static void main() {
+    public static void experiment1() {
         int[] nNodesList = {50, 100, 150, 200, 250, 300, 350, 400};
         for (int iter = 0; iter < 100; iter++) {
             System.out.print(iter + ",");
             for (int nNodes : nNodesList) {
-                System.out.print(testStabilize(65536, nNodes));
+                System.out.print(testStabilize(1073741824, nNodes));
+                System.out.print(",");
+            }
+            System.out.println();
+        }
+    }
+
+    public static void experiment2() {
+        int[] keySizeList = {(1<<9), (1<<12), (1<<15), (1<<18), (1<<21), (1<<24), (1<<27), (1<<30)};
+        for (int iter = 0; iter < 100; iter++) {
+            System.out.print(iter + ",");
+            for (int keySize : keySizeList) {
+                System.out.print(testStabilize(keySize, 200));
                 System.out.print(",");
             }
             System.out.println();
