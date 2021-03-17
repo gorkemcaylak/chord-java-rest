@@ -8,6 +8,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+import uw.cse.cse561.chord_java_REST.Main;
 import uw.cse.cse561.chord_java_REST.chord.ChordNode;
 import uw.cse.cse561.chord_java_REST.resource.NodeResource;
 
@@ -23,7 +24,11 @@ public class NodeClient {
     public NodeClient(URI baseUri) {
         Client client = ClientBuilder.newBuilder().connectTimeout(CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)
                 .readTimeout(READ_TIMEOUT_SEC, TimeUnit.SECONDS).build();
-        webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
+        if (Main.MULTI) {
+            webTarget = client.target(UriBuilder.fromUri(baseUri).build());
+        } else {
+            webTarget = client.target(UriBuilder.fromUri(baseUri).path(NodeResource.NODE_RESOURCE_PATH));
+        }
     }
 
     public ChordNodeModel findSuccessor(int id) {
