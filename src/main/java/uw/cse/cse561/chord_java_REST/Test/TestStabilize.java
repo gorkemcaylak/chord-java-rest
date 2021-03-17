@@ -10,7 +10,7 @@ import java.util.*;
 
 public class TestStabilize {
 
-    public static int successor(int id, List<Integer> sortedIDs) {
+    private static int successor(int id, List<Integer> sortedIDs) {
         if (sortedIDs.size() <= 1) {
             return sortedIDs.get(0);
         }
@@ -25,17 +25,33 @@ public class TestStabilize {
         return sortedIDs.get(0);
     }
 
-    public static boolean isStable(ChordNode node, Set<Integer> ids, int keySpaceSize) {
-        List<Integer> sortedIDs = new ArrayList<>(ids);
+    private static int[][] getGoundTruth(List<ChordNode> nodes, final int keySpaceSize) {
+        final int fingerTableSize = nodes.get(0).getFingerTable().size();
+
+        List<Integer> sortedIDs = new ArrayList<>();
+        for (ChordNode node : nodes) {
+            sortedIDs.add(node.getId());
+        }
         sortedIDs.sort(Integer::compare);
 
-        List<ChordNode> fingerTable = node.getFingerTable();
-        for (int i = 0; i < fingerTable.size(); i++) {
-            ChordNode finger = fingerTable.get(i);
-            int expected = successor((node.getId() + (1 << i)) % keySpaceSize, sortedIDs);
-            int actual = (finger == null? -1 : finger.getId());
-            if (expected != actual) {
-                return false;
+        int[][] groundTruth = new int[sortedIDs.size()][fingerTableSize];
+        for (int nodeIndex = 0; nodeIndex < sortedIDs.size(); nodeIndex++) {
+            for (int fingerIndex = 0; fingerIndex <  fingerTableSize; fingerIndex++) {
+                groundTruth[nodeIndex][fingerIndex] =
+                        successor((nodes.get(nodeIndex).getId() + (1 << fingerIndex)) % keySpaceSize, sortedIDs);
+            }
+        }
+        return groundTruth;
+    }
+
+    private static boolean isStable(List<ChordNode> nodes, int[][] groundTruth) {
+        for (int nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+            List<ChordNode> fingerTable = nodes.get(nodeIndex).getFingerTable();
+            for (int fingerIndex = 0; fingerIndex <  groundTruth[0].length; fingerIndex++) {
+                int expected = groundTruth[nodeIndex][fingerIndex];
+                ChordNode actual = fingerTable.get(fingerIndex);
+                if (actual == null || expected != actual.getId())
+                    return false;
             }
         }
         return true;
@@ -95,23 +111,19 @@ public class TestStabilize {
             ids.add(id);
         }
 
+        List<ChordNode> nodesList = new ArrayList<>(chordNodes.values());
+        int[][] groundTruth = getGoundTruth(nodesList, keySpaceSize);
+
         // Experiment
         for (int iter = 0; ; iter++) {
-            boolean stable = true;
-            for (ChordNode node : chordNodes.values()) {
-                if (!isStable(node, ids, keySpaceSize)) {
-                    stable = false;
-                    break;
-                }
+
+            if (isStable(nodesList, groundTruth)) {
+                return iter;
             }
 
             for (ChordNode node : chordNodes.values()) {
                 node.stabilize();
                 node.fixFingers();
-            }
-
-            if (stable) {
-                return iter;
             }
         }
     }

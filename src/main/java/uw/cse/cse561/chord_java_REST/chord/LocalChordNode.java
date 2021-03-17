@@ -21,7 +21,7 @@ public class LocalChordNode extends ChordNode {
 
     @JsonIgnore
     @EqualsAndHashCode.Exclude
-    private final Timer timer = new Timer("Node task timer", true);
+    private Timer timer;
 
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -190,6 +190,7 @@ public class LocalChordNode extends ChordNode {
         newNode.fingerTable.set(0, newNode);
 
         if (automaticStabilize) {
+            newNode.timer = new Timer("Node task timer", true);
             newNode.timer.schedule(wrap(() -> newNode.stabilize()), STARTUP_DELAY_MILLI);
             newNode.timer.schedule(wrap(() -> newNode.fixFingers()), STARTUP_DELAY_MILLI);
             newNode.timer.schedule(wrap(() -> newNode.checkPredecessor()), STARTUP_DELAY_MILLI);
