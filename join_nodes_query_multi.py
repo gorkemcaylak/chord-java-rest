@@ -48,6 +48,7 @@ for chord_size in chord_size_list:
       present_nodes.append(node)
     
     hops = []
+    print("Find Successors:")
     
     for i in range(chord_size):
       entry_node = random.choice(present_nodes)
