@@ -14,6 +14,7 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/")
 @Builder
@@ -24,13 +25,14 @@ public class NodeMultiResource {
     public static final String PING = "/ping";
     public static final String CREATE = "/create";
     public static final String JOIN = "/join";
+    public static final String LEAVE = "/leave";
 
     private final String hostname;
     private final int port;
     private final int chordLength;
 
     @Builder.Default
-    private Map<Integer, LocalChordNode> chordNodes = new HashMap<>();
+    private Map<Integer, LocalChordNode> chordNodes = new ConcurrentHashMap<>();
 
     @GET
     @Path("/{my_id}" + FIND_SUCCESSOR + "/{id}")
@@ -130,6 +132,18 @@ public class NodeMultiResource {
         } else {
             throw new BadRequestException();
         }
+    }
+
+    @GET
+    @Path("/{my_id}" + LEAVE)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response leave(@PathParam("my_id") int my_id) {
+        LocalChordNode current = chordNodes.remove(my_id);
+        if (current == null) {
+            throw new NotFoundException();
+        }
+        current.shutdownNode();
+        return Response.ok().build();
     }
 
     public static class NodeMultiResourceBuilder {

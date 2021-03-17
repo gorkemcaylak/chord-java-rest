@@ -206,6 +206,10 @@ public class LocalChordNode extends ChordNode {
         }
     }
 
+    public void shutdownNode() {
+        timer.cancel();
+    }
+
     private static TimerTask wrap(Runnable r) {
         return new TimerTask() {
             @Override
