@@ -4,8 +4,8 @@ import random
 import time
 import pickle
 
-CHORD_SIZE = 128
-TOTAL_NODES = 20
+CHORD_SIZE = 65536
+TOTAL_NODES = 1000
 QUERY_COUNT = 4
 
 jar_target = 'target/chord-java-REST-1.0-jar-with-dependencies.jar'
