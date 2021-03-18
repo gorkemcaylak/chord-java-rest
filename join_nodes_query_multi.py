@@ -35,21 +35,22 @@ for chord_size in chord_size_list:
     
       else:
         entry_node = random.choice(present_nodes)
-#        print("joining node: ", node, " to node: ", entry_node)
+        print("joining node: ", node, " to node: ", entry_node)
         http_cmd = "http://localhost:%d/%d/create" % (PORT, node)
-#        print(http_cmd)
+        print(http_cmd)
         response = requests.get(http_cmd)
-#        print("create response: ", response)
+        print("create response: ", response)
         http_cmd = "http://localhost:%d/%d/join/%d" % (PORT, node, entry_node)
-#        print(http_cmd)
+        print(http_cmd)
         response = requests.get(http_cmd)
-#        print("join response: ", response)
+        print("join response: ", response)
         
       present_nodes.append(node)
     
     hops = []
-    print("Find Successors:")
     
+    print("Find Successors:")
+    time.sleep(30) 
     for i in range(chord_size):
       entry_node = random.choice(present_nodes)
       #find_suc_node = random.randint(0,chord_size-1)
@@ -69,4 +70,5 @@ for chord_size in chord_size_list:
     print(result)
     file.write(result)    
     #proc.wait()
+
     proc.kill()

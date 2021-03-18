@@ -158,14 +158,14 @@ public class LocalChordNode extends ChordNode {
     }
 
     private void fixFingers() {
-        int rand_int = rand.nextInt(fingerTable.size());
-        int i = getStartOfFingerInterval(rand_int);
-        ChordNodeModel temp = findSuccessor(i);
-        assert (rand_int != 0);
-        if (temp != null) {
-            fingerTable.set(rand_int, classify(temp.toChordNode()));
+        for(int j=0; j<fingerTable.size(); j++) {
+            int i = (getId() + (int)Math.pow(2, j)) % chordSize;
+            ChordNodeModel temp = findSuccessor(i);
+            if (temp != null) {
+                fingerTable.set(j, classify(temp.toChordNode()));
+            }
+            timer.schedule(wrap(() -> fixFingers()), FIX_FINGER_TIMER_MILLI);
         }
-        timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
     }
 
     private void checkPredecessor() {
