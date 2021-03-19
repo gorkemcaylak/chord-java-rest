@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class Main implements Runnable {
     public static void main(String[] args) {
-        TestStabilize.experiment2();
+        TestStabilize.experiment3();
 //        new CommandLine(new Main()).execute(args);
     }
 

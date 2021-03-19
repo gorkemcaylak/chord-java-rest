@@ -28,7 +28,7 @@ public class NodeResource {
     @Path(FIND_SUCCESSOR)
     @Produces(MediaType.APPLICATION_JSON)
     public ChordNodeInfo findSuccessor(@QueryParam("id") int id, @QueryParam("key") int key) {
-        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).findSuccessor(key));
+        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).findSuccessor(null, key));
         return ret;
     }
 
@@ -36,7 +36,7 @@ public class NodeResource {
     @Path(GET_PREDECESSOR)
     @Produces(MediaType.APPLICATION_JSON)
     public ChordNodeInfo getPredecessor(@QueryParam("id") int id) {
-        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).getPredecessor());
+        ChordNodeInfo ret = new ChordNodeInfo(application.getNode(id).getPredecessor(null));
         return ret;
     }
 
@@ -45,7 +45,7 @@ public class NodeResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response notify(@QueryParam("id") int id, ChordNodeInfo target) {
-        application.getNode(id).notify(application.getNode(target));
+        application.getNode(id).notify(null, application.getNode(target));
         return Response.ok().build();
     }
 

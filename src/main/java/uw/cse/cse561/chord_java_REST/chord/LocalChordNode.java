@@ -25,7 +25,6 @@ public class LocalChordNode extends ChordNode {
 
     @JsonIgnore
     @EqualsAndHashCode.Exclude
-    @Getter
     @Setter(AccessLevel.PROTECTED)
     private ChordNode predecessor;
 
@@ -33,8 +32,13 @@ public class LocalChordNode extends ChordNode {
     @EqualsAndHashCode.Exclude
     private final boolean automaticStabilize;
 
-    private ChordNode getSuccessor() {
-        return fingerTable.get(0);
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private final MessageCounter messageCounter = new MessageCounter();
+
+    @Override
+    public int getMessageCount() {
+        return messageCounter.countAll();
     }
 
     @JsonIgnore
@@ -55,24 +59,45 @@ public class LocalChordNode extends ChordNode {
     private List<ChordNode> fingerTable;
 
     @Override
-    public ChordNode findSuccessor(int id) {
-        ChordNode successor = getSuccessor();
-        if (id == getId()) {
-            return this;
-        }
-        if (within(id, getId(), false, successor.getId(), true)) {
-            return successor;
-        } else {
-            ChordNode closestPrecedingNode = closestPrecedingNode(id);
-            if (closestPrecedingNode.getId() != getId()) {
-                return closestPrecedingNode.findSuccessor(id);
-            } else {
-                return successor.findSuccessor(id);
-            }
-        }
+    public ChordNode getSuccessor(ChordNode caller) {
+        messageCounter.recordMessage("getSuccessor", caller, this);
+        return fingerTable.get(0);
     }
 
-    private ChordNode closestPrecedingNode(int id) {
+    @Override
+    public ChordNode getPredecessor(ChordNode caller) {
+        messageCounter.recordMessage("getPredecessor", caller, this);
+        return predecessor;
+    }
+
+    @Override
+    public void setPredecessor(ChordNode caller, ChordNode predecessor) {
+        messageCounter.recordMessage("setPredecessor", caller, this);
+        this.predecessor = predecessor;
+    }
+
+    @Override
+    public ChordNode findSuccessor(ChordNode caller, int id) {
+        messageCounter.recordMessage("findSuccessor", caller, this);
+
+        return findPredecessor(this, id).getSuccessor(this);
+    }
+
+    @Override
+    public ChordNode findPredecessor(ChordNode caller, int id) {
+        messageCounter.recordMessage("findPredecessor", caller, this);
+        ChordNode result = this;
+        while (!within(id,
+                result.getId(), false,
+                result.getSuccessor(this).getId(), true)) {
+            result = result.closestPrecedingNode(this, id);
+        }
+        return result;
+    }
+
+    @Override
+    public ChordNode closestPrecedingNode(ChordNode caller, int id) {
+        messageCounter.recordMessage("closestPrecedingNode", caller, this);
         synchronized (fingerTable) {
             ListIterator<ChordNode> iter = fingerTable.listIterator(fingerTable.size());
             while (iter.hasPrevious()) {
@@ -82,14 +107,12 @@ public class LocalChordNode extends ChordNode {
                 }
             }
         }
-
-        // TODO: we shouldn't reach this line?
-
         return this;
     }
 
     @Override
-    public void notify(ChordNode n_other) {
+    public void notify(ChordNode caller, ChordNode n_other) {
+        messageCounter.recordMessage("notify", caller, this);
         if (predecessor == null || within(n_other.getId(), predecessor.getId(), false, getId(), false)) {
             // do not need classify since notify is called by stabilize
             predecessor = n_other;
@@ -102,7 +125,8 @@ public class LocalChordNode extends ChordNode {
     }
 
     @Override
-    protected boolean isAlive() {
+    protected boolean isAlive(ChordNode caller) {
+        messageCounter.recordMessage("isAlive", caller, this);
         return true;
     }
 
@@ -114,25 +138,66 @@ public class LocalChordNode extends ChordNode {
             return;
         }
 
-        ChordNode successor = n_other.findSuccessor(getId());
+        ChordNode successor = n_other.findSuccessor(this, getId());
         assert successor != null;
 
         fingerTable.set(0, successor);
     }
 
+    public void aggressiveJoin(ChordNode n_other) {
+        if (n_other == null) {
+            predecessor = this;
+            for (int i = 0; i < fingerTable.size(); i++) {
+                fingerTable.set(i, this);
+            }
+            return;
+        }
+
+        ChordNode successor = n_other.findSuccessor(this, getId());
+        assert successor != null;
+
+        fingerTable.set(0, successor);
+
+        predecessor = successor.getPredecessor(this);
+        successor.setPredecessor(this, this);
+
+        for (int i = 1; i < fingerTable.size(); i++) {
+            if (within(getStartOfFingerInterval(i),
+                    getId(), true,
+                    fingerTable.get(i - 1).getId(), false)) {
+                fingerTable.set(i, fingerTable.get(i - 1));
+            } else {
+                fingerTable.set(i, n_other.findSuccessor(this, getStartOfFingerInterval(i)));
+            }
+        }
+
+        for (int i = 0; i < fingerTable.size(); i++) {
+            n_other.findPredecessor(this, (getId() - (1 << i) + keySpaceSize) % keySpaceSize)
+                    .updateFingerTable(this, this, i);
+        }
+    }
+
+    public void updateFingerTable(ChordNode caller, ChordNode node, int fingerIndex) {
+        messageCounter.recordMessage("updateFingerTable", node, this);
+        if (within(node.getId(),
+                getId(), false,
+                fingerTable.get(fingerIndex).getId(), false)) {
+            fingerTable.set(fingerIndex, node);
+            predecessor.updateFingerTable(this, node, fingerIndex);
+        }
+    }
+
     public void stabilize() {
-        ChordNode successor = getSuccessor();
-        ChordNode x = successor.getPredecessor();
+        ChordNode successor = getSuccessor(this);
+        ChordNode x = successor.getPredecessor(this);
         if (x != null) {
-            if (within(x.getId(), getId(), false, getSuccessor().getId(), false)) {
+            if (within(x.getId(), getId(), false, getSuccessor(this).getId(), false)) {
                 fingerTable.set(0, x);
             }
-        } else if (!successor.isAlive()) {
+        } else if (!successor.isAlive(this)) {
             throw new RuntimeException();
-            // TODO: why?
-//            fingerTable.set(0, this);
         }
-        getSuccessor().notify(this);
+        getSuccessor(this).notify(this, this);
         if (automaticStabilize) {
             timer.schedule(wrap(()->stabilize()), STABILIZE_TIMER_MILLI);
         }
@@ -156,7 +221,7 @@ public class LocalChordNode extends ChordNode {
         // TODO: Add 1?
         int rand_int = rand.nextInt(fingerTable.size() - 1) + 1;
         int i = getStartOfFingerInterval(rand_int);
-        ChordNode temp = findSuccessor(i);
+        ChordNode temp = findSuccessor(this, i);
         if (temp != null) {
             fingerTable.set(rand_int, temp);
         }
@@ -167,7 +232,7 @@ public class LocalChordNode extends ChordNode {
     }
 
     private void checkPredecessor() {
-        if (predecessor != null && !predecessor.isAlive()) {
+        if (predecessor != null && !predecessor.isAlive(this)) {
             predecessor = null;
         }
     }

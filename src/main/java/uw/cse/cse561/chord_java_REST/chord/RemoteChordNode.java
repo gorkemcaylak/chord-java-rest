@@ -27,12 +27,37 @@ public class RemoteChordNode extends ChordNode {
     }
 
     @Override
-    public ChordNode findSuccessor(int id) {
+    public int getMessageCount() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateFingerTable(ChordNode caller, ChordNode node, int fingerIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChordNode findSuccessor(ChordNode caller, int id) {
         return client.findSuccessor(id);
     }
 
     @Override
-    public void notify(ChordNode n) {
+    public ChordNode findPredecessor(ChordNode caller, int id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChordNode closestPrecedingNode(ChordNode caller, int id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChordNode getSuccessor(ChordNode caller) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void notify(ChordNode caller, ChordNode n) {
         client.notify(n);
     }
 
@@ -52,13 +77,18 @@ public class RemoteChordNode extends ChordNode {
     }
 
     @Override
-    protected boolean isAlive() {
+    protected boolean isAlive(ChordNode caller) {
         return client.ping();
     }
 
     @Override
-    public ChordNode getPredecessor() {
+    public ChordNode getPredecessor(ChordNode caller) {
         return client.getPredecessor();
+    }
+
+    @Override
+    public void setPredecessor(ChordNode caller, ChordNode predecessor) {
+        throw new UnsupportedOperationException();
     }
 
     public static abstract class RemoteChordNodeBuilder<C extends RemoteChordNode, B extends RemoteChordNodeBuilder<C, B>> extends ChordNodeBuilder<C, B> {
