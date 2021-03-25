@@ -15,6 +15,8 @@ import java.net.URI;
 import java.text.MessageFormat;
 
 public class Main implements Runnable {
+    public static boolean MULTI = false;
+
     public static void main(String[] args) {
         new CommandLine(new Main()).execute(args);
     }
@@ -54,28 +56,38 @@ public class Main implements Runnable {
             defaultValue = "3")
     private int joinRetry;
 
+    @CommandLine.Option(names = {"-m", "--multi"},
+            description = "Run multiple node in one server")
+    private boolean multi = false;
+
     @Override
     public void run() {
+        MULTI = multi;
+        ResourceConfig rc = null;
         URI uri = UriBuilder.fromPath("/")
                 .scheme("http")
                 .host(listenAddress)
                 .port(port)
-
                 .build();
-        URI remoteAccessUri = UriBuilder
-                .fromPath("/")
-                .scheme("http")
-                .host(hostname)
-                .port(port)
-                .build();
+        LocalChordNode localChordNode = null;
+        if (MULTI) {
+            rc = ResourceConfig.forApplication(MultiChordApplication.builder().chordLength(chordLength).hostname(hostname).port(port).build());
+        } else {
+            URI remoteAccessUri = UriBuilder
+                    .fromPath("/")
+                    .scheme("http")
+                    .host(hostname)
+                    .port(port)
+                    .build();
 
-        LocalChordNode localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
-        ResourceConfig rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
+            localChordNode = LocalChordNode.create(remoteAccessUri, id, chordLength);
+            rc = ResourceConfig.forApplication(ChordApplication.builder().chordNode(localChordNode).build());
+        }
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
         System.out.println(MessageFormat.format("Starting server at {0}....", uri.toString()));
         try {
             server.start();
-            if (joinHostname != null && joinPort != null && joinId != null) {
+            if (!MULTI && joinHostname != null && joinPort != null && joinId != null) {
                 URI joiningUri = UriBuilder.fromPath("/")
                         .scheme("http")
                         .host(joinHostname)

@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.Main;
+import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 
 import java.net.URI;
 import java.util.*;
@@ -51,25 +53,55 @@ public class LocalChordNode extends ChordNode {
     // 1 2 4 8
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    @Getter
     private List<ChordNode> fingerTable;
 
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @Getter
+    private Random rand;
+
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @Getter
+    private boolean alive;
+
     @Override
-    public ChordNode findSuccessor(int id) {
+    public ChordNodeModel findSuccessor(int id, List<Integer> visited) {
+        if (!alive || visited.contains(getId())) {
+            return null;
+        }
+        visited = new ArrayList<>(visited);
+        visited.add(getId());
         ChordNode successor = getSuccessor();
-        if (within(id, getId(), successor.getId(), true)) {
-            return successor;
+        if (id == getId()) {
+            return this.toChordNodeModel(visited);
+        } else if (within(id, getId(), successor.getId(), true)) {
+            return successor.toChordNodeModel(visited);
         } else {
             ChordNode closestPrecedingNode = closestPrecedingNode(id);
             if (closestPrecedingNode.getId() != getId()) {
-                return closestPrecedingNode.findSuccessor(id);
+                return closestPrecedingNode.findSuccessor(id, visited);
             } else {
-                return successor.findSuccessor(id);
+                return successor.findSuccessor(id, visited);
             }
         }
     }
 
     @Override
-    public void notify(ChordNode n_other) {
+    public ChordNodeModel findSuccessor(int id) {
+        if (!alive) {
+            return null;
+        }
+        return findSuccessor(id, Collections.EMPTY_LIST);
+    }
+
+    @Override
+    public synchronized void notify(ChordNode n_other) {
+        if (!alive) {
+            return;
+        }
+
         if (predecessor == null || within(n_other.getId(), predecessor.getId(), getId(), false)) {
             // do not need classify since notify is called by stabilize
             predecessor = n_other;
@@ -78,14 +110,14 @@ public class LocalChordNode extends ChordNode {
 
     @Override
     protected boolean isAlive() {
-        return true;
+        return alive;
     }
 
     public boolean join(ChordNode n_other) {
         predecessor = null;
-        ChordNode temp = n_other.findSuccessor(getId());
+        ChordNodeModel temp = n_other.findSuccessor(getId());
         if (temp != null) {
-            fingerTable.set(0, temp);
+            fingerTable.set(0, classify(temp.toChordNode()));
             return true;
         }
 
@@ -126,15 +158,14 @@ public class LocalChordNode extends ChordNode {
     }
 
     private void fixFingers() {
-        Random rand = new Random(); // uniform pick
-        int rand_int = rand.nextInt(fingerTable.size() - 1);
-        int i = getStartOfFingerInterval(rand_int);
-        ChordNode temp = findSuccessor(i);
-        assert (rand_int != 0);
-        if (temp != null) {
-            fingerTable.set(rand_int, classify(temp));
+        for(int j=0; j<fingerTable.size(); j++) {
+            int i = (getId() + (int)Math.pow(2, j)) % chordSize;
+            ChordNodeModel temp = findSuccessor(i);
+            if (temp != null) {
+                fingerTable.set(j, classify(temp.toChordNode()));
+            }
+            timer.schedule(wrap(() -> fixFingers()), FIX_FINGER_TIMER_MILLI);
         }
-        timer.schedule(wrap(()->fixFingers()), FIX_FINGER_TIMER_MILLI);
     }
 
     private void checkPredecessor() {
@@ -162,6 +193,9 @@ public class LocalChordNode extends ChordNode {
         // initialize size array
         newNode.fingerTable = Collections.synchronizedList(
                 new ArrayList<ChordNode>(Collections.nCopies(fingerTableSize, null)));
+
+        newNode.rand = new Random();
+        newNode.alive = true;
 
         newNode.fingerTable.set(0, newNode);
 
@@ -192,15 +226,25 @@ public class LocalChordNode extends ChordNode {
     }
 
     private ChordNode classify(ChordNode node) {
-        if (node.getId() == getId()) {
-            return this;
+        if (Main.MULTI) {
+            return node;
         } else {
-            if (node instanceof RemoteChordNode) {
-                return node;
-            } else  {
-                return RemoteChordNode.builder().chordNode(node).build();
+            if (node.getId() == getId()) {
+                return this;
+            } else {
+                if (node instanceof RemoteChordNode) {
+                    return node;
+                } else {
+                    return RemoteChordNode.builder().chordNode(node).build();
+                }
             }
         }
+    }
+
+    public synchronized void shutdownNode() {
+        timer.cancel();
+        alive = false;
+        predecessor = null;
     }
 
     private static TimerTask wrap(Runnable r) {

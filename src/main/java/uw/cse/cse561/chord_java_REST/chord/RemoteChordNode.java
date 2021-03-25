@@ -1,9 +1,14 @@
 package uw.cse.cse561.chord_java_REST.chord;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.ws.rs.core.UriBuilder;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import uw.cse.cse561.chord_java_REST.Main;
+import uw.cse.cse561.chord_java_REST.client.ChordNodeModel;
 import uw.cse.cse561.chord_java_REST.client.NodeClient;
+
+import java.util.List;
 
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -15,10 +20,20 @@ public class RemoteChordNode extends ChordNode {
     protected RemoteChordNode(RemoteChordNodeBuilder<?, ?> b) {
         super(b);
         this.client = new NodeClient(getUri());
+        if (Main.MULTI) {
+            Exception ex = new IllegalStateException();
+            ex.printStackTrace();
+            throw new IllegalStateException();
+        }
     }
 
     @Override
-    public ChordNode findSuccessor(int id) {
+    public ChordNodeModel findSuccessor(int id, List<Integer> visited) {
+        return client.findSuccessor(id, visited);
+    }
+
+    @Override
+    public ChordNodeModel findSuccessor(int id) {
         return client.findSuccessor(id);
     }
 
